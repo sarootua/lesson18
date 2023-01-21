@@ -1,0 +1,46 @@
+version: "3.8"
+
+secrets:
+  mysql_root_pass:
+    file: ./mysql_root_pass
+  mysql_db_base:
+    file: ./mysql_db_base
+  mysql_db_user:
+    file: ./mysql_db_user
+  mysql_db_pass:
+    file: ./mysql_db_pass
+
+services:
+  db:
+    image: mysql:latest
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    secrets:
+      - mysql_root_pass
+      - mysql_db_base
+      - mysql_db_user
+      - mysql_db_pass
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_pass
+      MYSQL_DATABASE_FILE:      /run/secrets/mysql_db_base
+      MYSQL_USER_FILE:          /run/secrets/mysql_db_user
+      MYSQL_PASSWORD_FILE:      /run/secrets/mysql_db_pass
+  wordpress:
+    depends_on:
+      - db
+    image: arm64v8/wordpress:6
+    ports:
+      - "8000:80"
+    restart: always
+    secrets:
+      - mysql_db_base
+      - mysql_db_user
+      - mysql_db_pass
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER_FILE:     /run/secrets/mysql_db_user
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/mysql_db_pass
+      WORDPRESS_DB_NAME_FILE:     /run/secrets/mysql_db_base
+volumes:
+  db_data: {}
